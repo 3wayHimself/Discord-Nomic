@@ -14,7 +14,6 @@ client = discord.Client()
 # This section is for global variables
 users = {}
 generation_period = 5 # The number of seconds between each generation event
-generation_amount = 5 # The number of watts to be added every second
 update_msg = None # Reference to the message to keep updated
 
 # This is what happens everytime the bot launches. In this case, it prints information like server count, user count the bot is connected to, and the bot id in the console.
@@ -81,7 +80,7 @@ async def adduser(ctx):
 async def view(ctx):
     msg = ""
     for key, user in users.items():
-        msg = msg + str(key) + ": " + str(user.watts) + " watts\n"
+        msg = msg + str(key) + ": " + str(user.getAttr("watts")) + " watts\n"
     global update_msg # indicate we want the global variable, not a local
     update_msg = await theBot.send_message(ctx.message.channel, msg) # send and save the update message
 
@@ -90,22 +89,51 @@ async def view(ctx):
 class User():
     def __init__(self, name):
         self.name = name
-        self.watts = 0
+        self.data = {}
+
+    def addPower(self):
+        avail = self.getAttr("battery") - self.getAttr("watts") # how much space is left in the battery
+        if avail > 0:
+            if avail > self.getAttr("generation"):
+                self.setAttr("watts", self.getAttr("watts") + self.getAttr("generation"))
+            else:
+                self.setAttr("watts", self.getAttr("battery"))
+                self.setAttr("overflow", self.getAttr("overflow") + self.getAttr("generation") - avail)
+        else:
+            self.overflow = self.overflow + self.generation
+
+    def getAttr(self, key): # Get infor for this instance
+        if key in self.data:
+            return self.data[key] # get a amount unique
+        elif key == 'watts': # otherwise, the following are default values
+            return 0
+        elif key == 'battery':
+            return 100
+        elif key == 'overflow':
+            return 0
+        elif key == 'generation':
+            return 1
+        else:
+            return None # if we reach this, the requested key was not found
+
+    def setAttr(self, key, value): # set the value of an attribute of this instance
+        self.data[key] = value
 
 
 # Put your other functions here
-async def generatePower():
+async def update():
     while True: # set this up as an infinite loop
         for key, user in users.items():
-            user.watts = user.watts + generation_amount # This adds the specified number of watts
-
+            user.addPower() # This adds the specified number of watts
         if update_msg is not None: # if we have set a place to update the display
             msg = ""
             for key, user in users.items():
-                msg = msg + str(key) + ": " + str(user.watts) + " watts\n"
+                msg = msg + str(key) + ":\n--Battery: " + str(user.getAttr("watts")) + "/" + str(user.getAttr("battery")) + "W\n--Overflow: " + str(user.getAttr("overflow")) + "W\n\n"
             await theBot.edit_message(update_msg, msg) # send the edit request
         await asyncio.sleep(generation_period) # wait a specified amount of time
-asyncio.ensure_future(generatePower(), loop=client.loop) # Add this to the event scheduler
+
+
+asyncio.ensure_future(update(), loop=client.loop) # Add this to the event scheduler
 
 
 # These lines MUST be the end of the file. Any code after it might not run properly.
