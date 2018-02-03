@@ -19,7 +19,7 @@ save_period = 60
 update_period = 5
 update_msg = None  # Reference to the message to keep updated
 watt_win = 5000000
-watts_sold = 20000
+watts_sold = 200000
 
 
 # this section is for custom classes
