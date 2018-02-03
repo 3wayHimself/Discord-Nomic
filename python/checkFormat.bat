@@ -1,0 +1,1 @@
+pycodestyle main.py --max-line-length=100
