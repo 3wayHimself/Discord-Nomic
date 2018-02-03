@@ -152,7 +152,7 @@ async def buy(ctx):
     # actually do the purchase here.
     if args[1].lower() == "battery":
         if user.spendCash(amount * 100):
-            user.setAttr("battery", user.getAttr("battery") + 25)
+            user.setAttr("battery", user.getAttr("battery") + (25 * amount))
             msg = "You have bought " + str(amount) + " batteries for $" + str(amount*100)
         else:
             msg = "You can't affort that many"
