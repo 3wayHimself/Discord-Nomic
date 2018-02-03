@@ -8,6 +8,7 @@ from discord.ext import commands
 import platform
 import pickle
 import math
+import datetime
 
 
 # This section is for global variables
@@ -33,20 +34,19 @@ class User():
         global update_msg
         # how much space is left in the battery
         battery_room = self.getAttr("battery") - self.getAttr("watts")
+        generated = self.getAttr("generation") + self.getAttr("solar_panels") * getSolarOut()
         if battery_room > 0:
-            if battery_room > self.getAttr("generation"):
-                self.setAttr("watts", round(self.getAttr(
-                    "watts") + self.getAttr("generation"), 2))
+            if battery_room > generated:
+                self.setAttr("watts", round(self.getAttr("watts") + generated, 2))
             else:
                 if update_msg is not None:
                     msg = self.mention + " has a full battery"
                     theBot.loop.create_task(sendMessage(update_msg.channel, msg))
                 self.setAttr("watts", self.getAttr("battery"))
                 self.setAttr("overflow", round(self.getAttr(
-                    "overflow") + self.getAttr("generation") - battery_room, 2))
+                    "overflow") + generated - battery_room, 2))
         else:
-            self.setAttr("overflow", round(self.getAttr(
-                "overflow") + self.getAttr("generation"), 2))
+            self.setAttr("overflow", round(self.getAttr("overflow") + generated, 2))
         if self.getAttr("overflow") >= watt_win:
             if update_msg is not None:
                 msg = self.mention + " has won"
@@ -64,6 +64,8 @@ class User():
         elif key == 'generation':
             return generation_period
         elif key == 'cash':
+            return 0
+        elif key == 'solar_panels':
             return 0
         else:
             return None  # if we reach this, the requested key was not found
@@ -273,6 +275,13 @@ async def genPower():
             user.addPower()  # This adds the specified number of watts
         uptime = uptime + 1
         await asyncio.sleep(generation_period)
+
+
+def getSolarOut():
+    hour = (datetime.datetime.now()).hour + (datetime.datetime.now()).minute / 60
+    if not (2 < hour < 22):
+        return 0
+    return round(-0.01 * hour ** 2 + .24 * hour - .44, 2)
 
 
 async def save_task():
