@@ -145,6 +145,10 @@ async def buy(ctx):
     else:
         try:
             amount = int(args[2])
+            if amount <= 0:
+                msg = "You can't purchase that many"
+                await theBot.say(msg)
+                return
         except ValueError:
             msg = "An invalid amount was supplied. Please make sure it is a whole number."
             await theBot.say(msg)
@@ -152,7 +156,7 @@ async def buy(ctx):
     # actually do the purchase here.
     if args[1].lower() == "battery":
         if user.spendCash(amount * 100):
-            user.setAttr("battery", user.getAttr("battery") + 25)
+            user.setAttr("battery", user.getAttr("battery") + (25 * amount))
             msg = "You have bought " + str(amount) + " batteries for $" + str(amount*100)
         else:
             msg = "You can't affort that many"
@@ -222,6 +226,10 @@ async def sell(ctx):
         try:
             watts = float(args[1])
             price = round(watts * wattPrice(), 2)
+            if watts <= 0:
+                msg = "You can't sell a negative amount"
+                await theBot.say(msg)
+                return
             if user.consumePower(watts):
                 user.gainCash(price)
                 watts_sold = watts_sold + watts
