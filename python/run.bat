@@ -1,1 +1,1 @@
-pipenv run python3 main.py
+pipenv run python main.py
