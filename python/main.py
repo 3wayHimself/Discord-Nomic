@@ -274,14 +274,14 @@ async def update_view():
                         user.getAttr("cash")) + "\n\n"
                 # send the edit request
                 await theBot.edit_message(update_msg, msg)
-        except Error:
+        except:
             print("probably a timeout error here")
         await asyncio.sleep(update_period)  # wait a specified amount of time
 
 
 def wattPrice():
     """Note: this is effectivly sigmoid(uptime/watts_sold)"""
-    return round((1 / (1 + math.exp(-uptime / watts_sold - 1.5))), 2)
+    return round((1 / (1 + math.exp(-uptime / watts_sold - 1.5))), 4)
 
 
 # These lines MUST be the end of the file. Any code after it might not run properly.
