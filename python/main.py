@@ -128,6 +128,37 @@ async def on_ready():
 
 
 # This section is for custom commands.
+@theBot.command(pass_context=True, help='purchases stuff. you must have the funds to do so.')
+async def buy(ctx):
+    user = get_user_or_None(ctx.message.author)
+    if user is None:
+        msg = "You are not a player, and therefore can't really do anything"
+        await theBot.say(msg)
+        return
+    args = (ctx.message.content).split()
+    if len(args) == 1:
+        msg = "Please specify something to buy. Usually this will be in the form of '!buy {thing} {amount}'"
+        await theBot.say(msg)
+        return
+    if len(args) == 2:
+        amount = 1
+    else:
+        try:
+            amount = int(args[2])
+        except ValueError:
+            msg = "An invalid amount was supplied. Please make sure it is a whole number."
+            await theBot.say(msg)
+            return
+    # actually do the purchase here.
+    if args[1].lower() == "battery":
+        if user.spendCash(amount * 100):
+            user.setAttr("battery", user.getAttr("battery") + 25)
+            msg = "You have bought " + str(amount) + " batteries for $" + str(amount*100)
+        else:
+            msg = "You can't affort that many"
+        await theBot.say(msg)
+
+
 @theBot.command(pass_context=True, help='Displays basic game info.')
 async def info(ctx):
     msg = 'Info: \nUptime: ' + str(uptime)
