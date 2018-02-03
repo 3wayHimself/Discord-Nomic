@@ -34,7 +34,7 @@ class User():
         global update_msg
         # how much space is left in the battery
         battery_room = self.getAttr("battery") - self.getAttr("watts")
-        generated = self.getAttr("generation") + self.getAttr("solar_panels") * getSolarOut()
+        generated = self.getGenRate()
         if battery_room > 0:
             if battery_room > generated:
                 self.setAttr("watts", round(self.getAttr("watts") + generated, 2))
@@ -66,7 +66,7 @@ class User():
         elif key == 'cash':
             return 0
         elif key == 'solar_panels':
-            return 0
+            return 1
         else:
             return None  # if we reach this, the requested key was not found
 
@@ -89,6 +89,9 @@ class User():
             self.setAttr("cash", round(self.getAttr("cash") - spent, 2))
             return True
         return False
+        
+    def getGenRate(self):
+        return round(self.getAttr("generation") + self.getAttr("solar_panels") * getSolarOut(), 2)
 
 
 # This is what happens everytime the bot launches.
@@ -319,7 +322,8 @@ async def update_view():
                         user.getAttr("watts")) + "/" + str(
                         user.getAttr("battery")) + "W\n--Overflow: " + str(
                         user.getAttr("overflow")) + "W\n--Cash: $" + str(
-                        user.getAttr("cash")) + "\n\n"
+                        user.getAttr("cash")) + "\n--W/s: " + str(
+                        user.getGenRate()) + "\n\n"
                 # send the edit request
                 await theBot.edit_message(update_msg, msg)
         except:
