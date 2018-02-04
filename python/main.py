@@ -15,12 +15,10 @@ import datetime
 theBot = Bot(description="Squid Nomic bot for Discord", command_prefix="!", pm_help=False)
 users = {}
 uptime = 0
-generation_period = 1
 save_period = 60
 update_period = 5
 update_msg = None  # Reference to the message to keep updated
-watt_win = 5000000
-watts_sold = 200000
+watts_sold = 1  # set to something positive to prevend DIV0 errors
 
 price_battery = 100
 price_solar = 1000
@@ -32,6 +30,27 @@ class User():
         self.name = name
         self.mention = mention
         self.data = {}
+
+    def getAttr(self, key):  # Get in for for this instance
+        if key in self.data:
+            return self.data[key]  # get a amount unique
+        elif key == 'watts':  # otherwise, the following are default values
+            return 0
+        elif key == 'battery':
+            return 100
+        elif key == 'cash':
+            return 0
+        elif key == 'solar_panels':
+            return 1
+        else:
+            return None  # if we reach this, the requested key was not found
+
+    def setAttr(self, key, value):  # set the value of an attribute of this instance
+        self.data[key] = value
+        
+    def updatePower(self):
+        self.addPower()
+        #TODO per tick power consumtion here, such as mines and factories.
 
     def addPower(self):
         global update_msg
@@ -46,35 +65,6 @@ class User():
                     msg = self.mention + " has a full battery"
                     theBot.loop.create_task(sendMessage(update_msg.channel, msg))
                 self.setAttr("watts", self.getAttr("battery"))
-                self.setAttr("overflow", round(self.getAttr(
-                    "overflow") + generated - battery_room, 2))
-        else:
-            self.setAttr("overflow", round(self.getAttr("overflow") + generated, 2))
-        if self.getAttr("overflow") >= watt_win:
-            if update_msg is not None:
-                msg = self.mention + " has won"
-                theBot.loop.create_task(sendMessage(update_msg.channel, msg))
-
-    def getAttr(self, key):  # Get infor for this instance
-        if key in self.data:
-            return self.data[key]  # get a amount unique
-        elif key == 'watts':  # otherwise, the following are default values
-            return 0
-        elif key == 'battery':
-            return 100
-        elif key == 'overflow':
-            return 0
-        elif key == 'generation':
-            return generation_period
-        elif key == 'cash':
-            return 0
-        elif key == 'solar_panels':
-            return 1
-        else:
-            return None  # if we reach this, the requested key was not found
-
-    def setAttr(self, key, value):  # set the value of an attribute of this instance
-        self.data[key] = value
 
     def consumePower(self, consumed):  # Attempt to consume power. Returns True if successful
         if self.getAttr("watts") >= consumed:
@@ -94,7 +84,7 @@ class User():
         return False
 
     def getGenRate(self):
-        return round(self.getAttr("generation") + self.getAttr("solar_panels") * getSolarOut(), 2)
+        return round(self.getAttr("solar_panels") * getSolarOut(), 2)
 
 
 # This is what happens everytime the bot launches.
@@ -127,7 +117,7 @@ async def on_ready():
             global watts_sold
             watts_sold = pickle.load(in_s)
         except EOFError:  # We have finished the file
-            print("Couldn't finish readinf file")
+            print("Couldn't finish reading file")
 
     theBot.loop.create_task(save_task())
     theBot.loop.create_task(genPower())
@@ -138,6 +128,7 @@ async def on_ready():
 # This section is for custom commands.
 @theBot.command(pass_context=True, help='purchases stuff. you must have the funds to do so.')
 async def buy(ctx):
+    msg = "Invalid item"
     user = get_user_or_None(ctx.message.author)
     if user is None:
         msg = "You are not a player, and therefore can't really do anything"
@@ -155,7 +146,7 @@ async def buy(ctx):
         try:
             amount = int(args[2])
             if amount <= 0:
-                msg = "You can't purchase that many"
+                msg = "You can't purchase that amount"
                 await theBot.say(msg)
                 return
         except ValueError:
@@ -172,7 +163,7 @@ async def buy(ctx):
             msg = "You can't affort that many"
     if args[1].lower() == "solar":
         if user.spendCash(amount * price_solar):
-            user.setAttr("solar_panel", user.getAttr("solar_panel") + amount)
+            user.setAttr("solar_panels", user.getAttr("solar_panels") + amount)
             msg = "You have bought " + str(amount) + " solar panels for $" + str(
                 amount * price_solar)
         else:
@@ -182,7 +173,7 @@ async def buy(ctx):
 
 @theBot.command(pass_context=True, help='Displays basic game info.')
 async def info(ctx):
-    msg = 'Info: \nUptime: ' + str(uptime)
+    msg = 'Info: \n' + getUserInfo(get_user_or_None(ctx.message.author))
     await theBot.say(msg)
 
 
@@ -264,7 +255,7 @@ async def sell(ctx):
 async def view(ctx):
     msg = ""
     for key, user in users.items():
-        msg = msg + str(key) + ": " + str(user.getAttr("watts")) + " watts\n"
+        msg = msg + getUserInfo(user)
     global update_msg  # indicate we want the global variable, not a local
     if msg is not "":
         # send and save the update message
@@ -288,7 +279,15 @@ async def genPower():
         for key, user in users.items():
             user.addPower()  # This adds the specified number of watts
         uptime = uptime + 1
-        await asyncio.sleep(generation_period)
+        await asyncio.sleep(1)
+
+
+def getUserInfo(user):
+    return str(user.name) + ":\n--Battery: " + str(
+        user.getAttr("watts")) + "/" + str(
+        user.getAttr("battery")) + "W\n--Cash: $" + str(
+        user.getAttr("cash")) + "\n--W/s: " + str(
+        user.getGenRate()) + "\n\n"
 
 
 def getSolarOut():
@@ -329,12 +328,7 @@ async def update_view():
             if update_msg is not None:  # if we have set a place to update the display
                 msg = 'Uptime: ' + str(uptime) + "\n$" + str(wattPrice()) + "/W\n\n"
                 for key, user in users.items():
-                    msg = msg + str(key) + ":\n--Battery: " + str(
-                        user.getAttr("watts")) + "/" + str(
-                        user.getAttr("battery")) + "W\n--Overflow: " + str(
-                        user.getAttr("overflow")) + "W\n--Cash: $" + str(
-                        user.getAttr("cash")) + "\n--W/s: " + str(
-                        user.getGenRate()) + "\n\n"
+                    msg = msg + getUserInfo(user)
                 # send the edit request
                 await theBot.edit_message(update_msg, msg)
         except:

@@ -1,0 +1,1 @@
+autopep8 --in-place main.py --max-line-length 100
