@@ -22,6 +22,9 @@ update_msg = None  # Reference to the message to keep updated
 watt_win = 5000000
 watts_sold = 200000
 
+price_battery = 100
+price_solar = 1000
+
 
 # this section is for custom classes
 class User():
@@ -89,7 +92,7 @@ class User():
             self.setAttr("cash", round(self.getAttr("cash") - spent, 2))
             return True
         return False
-        
+
     def getGenRate(self):
         return round(self.getAttr("generation") + self.getAttr("solar_panels") * getSolarOut(), 2)
 
@@ -142,7 +145,8 @@ async def buy(ctx):
         return
     args = (ctx.message.content).split()
     if len(args) == 1:
-        msg = "Please specify something to buy. Usually this will be in the form of '!buy {thing} {amount}'"
+        msg = "Please specify something to buy." \
+            " Usually this will be in the form of '!buy {thing} {amount}'"
         await theBot.say(msg)
         return
     if len(args) == 2:
@@ -160,12 +164,20 @@ async def buy(ctx):
             return
     # actually do the purchase here.
     if args[1].lower() == "battery":
-        if user.spendCash(amount * 100):
+        if user.spendCash(amount * price_battery):
             user.setAttr("battery", user.getAttr("battery") + (25 * amount))
-            msg = "You have bought " + str(amount) + " batteries for $" + str(amount*100)
+            msg = "You have bought " + str(amount) + " batteries for $" + str(
+                amount * price_battery)
         else:
             msg = "You can't affort that many"
-        await theBot.say(msg)
+    if args[1].lower() == "solar":
+        if user.spendCash(amount * price_solar):
+            user.setAttr("solar_panel", user.getAttr("solar_panel") + amount)
+            msg = "You have bought " + str(amount) + " solar panels for $" + str(
+                amount * price_solar)
+        else:
+            msg = "You can't afford that many."
+    await theBot.say(msg)
 
 
 @theBot.command(pass_context=True, help='Displays basic game info.')
@@ -238,8 +250,7 @@ async def sell(ctx):
             if user.consumePower(watts):
                 user.gainCash(price)
                 watts_sold = watts_sold + watts
-                msg = user.mention + " has sold " + \
-                    str(watts) + "W for $" + str(price)
+                msg = user.mention + " has sold " + str(watts) + "W for $" + str(price)
                 await theBot.say(msg)
             else:
                 msg = "You don't have that much power stored"
