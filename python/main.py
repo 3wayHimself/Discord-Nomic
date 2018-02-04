@@ -172,7 +172,7 @@ async def buy(ctx):
             msg = "You can't affort that many"
     if args[1].lower() == "solar":
         if user.spendCash(amount * price_solar):
-            user.setAttr("solar_panel", user.getAttr("solar_panel") + amount)
+            user.setAttr("solar_panels", user.getAttr("solar_panels") + amount)
             msg = "You have bought " + str(amount) + " solar panels for $" + str(
                 amount * price_solar)
         else:
