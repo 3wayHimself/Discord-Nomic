@@ -162,14 +162,14 @@ async def buy(ctx):
             user.setAttr("batteries", user.getAttr("batteries") + amount)
             msg = "You have bought " + str(amount) + " batteries for $" + str(price)
         else:
-            msg = "You can't affort that many. It will cost $" + price
+            msg = "You can't affort that many. It will cost $" + str(price)
     if args[1].lower() == "solar":
         price = getPrice(user, "solar_panels", amount)
         if user.spendCash(price):
             user.setAttr("solar_panels", user.getAttr("solar_panels") + amount)
             msg = "You have bought " + str(amount) + " solar panels for $" + str(price)
         else:
-            msg = "You can't afford that many. It will cost $" + price
+            msg = "You can't afford that many. It will cost $" + str(price)
     await theBot.say(msg)
 
 
