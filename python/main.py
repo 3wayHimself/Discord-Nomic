@@ -212,7 +212,7 @@ async def build(ctx):
     if args[1].lower() == "bot":
         if user.spendSolar(2^user.getAttr("bots")):
             msg = "You have built a bot out of" + str(2^user.getAttr("bots")) + "solar panels"
-            user.setAttr("bot", user.getAttr("batteries") + 1)
+            user.setAttr("bot", user.getAttr("bots") + 1)
         else:
             msg = "You can't affort that many"
     await theBot.say(msg)
