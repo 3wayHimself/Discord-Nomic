@@ -304,7 +304,7 @@ def getPrice(user, object, count):
     current = user.getAttr(object)
     if current is None:
         return None
-    if object == "solar_panel":
+    if object == "solar_panels":
         price = price_solar
     elif object == "batteries":
         price = price_battery
