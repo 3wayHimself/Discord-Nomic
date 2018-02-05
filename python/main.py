@@ -36,26 +36,28 @@ class User():
             return self.data[key]  # get a amount unique
         elif key == 'watts':  # otherwise, the following are default values
             return 0
-        elif key == 'battery':
-            return 100
+        elif key == 'batteries':
+            return 4
         elif key == 'cash':
             return 0
         elif key == 'solar_panels':
             return 1
+        elif key == "max_watts":
+            return self.getAttr("batteries") * 25
         else:
             return None  # if we reach this, the requested key was not found
 
     def setAttr(self, key, value):  # set the value of an attribute of this instance
         self.data[key] = value
-        
+
     def updatePower(self):
         self.addPower()
-        #TODO per tick power consumtion here, such as mines and factories.
+        # TODO per tick power consumtion here, such as mines and factories.
 
     def addPower(self):
         global update_msg
         # how much space is left in the battery
-        battery_room = self.getAttr("battery") - self.getAttr("watts")
+        battery_room = self.getAttr("max_watts") - self.getAttr("watts")
         generated = self.getGenRate()
         if battery_room > 0:
             if battery_room > generated:
@@ -64,7 +66,7 @@ class User():
                 if update_msg is not None:
                     msg = self.mention + " has a full battery"
                     theBot.loop.create_task(sendMessage(update_msg.channel, msg))
-                self.setAttr("watts", self.getAttr("battery"))
+                self.setAttr("watts", self.getAttr("max_watts"))
 
     def consumePower(self, consumed):  # Attempt to consume power. Returns True if successful
         if self.getAttr("watts") >= consumed:
@@ -120,7 +122,7 @@ async def on_ready():
             print("Couldn't finish reading file")
 
     theBot.loop.create_task(save_task())
-    theBot.loop.create_task(genPower())
+    theBot.loop.create_task(powerTick())
     theBot.loop.create_task(update_view())
     return await theBot.change_presence(game=discord.Game(name='Nomic'))
 
@@ -156,7 +158,7 @@ async def buy(ctx):
     # actually do the purchase here.
     if args[1].lower() == "battery":
         if user.spendCash(amount * price_battery):
-            user.setAttr("battery", user.getAttr("battery") + (25 * amount))
+            user.setAttr("batteries", user.getAttr("batteries") + amount)
             msg = "You have bought " + str(amount) + " batteries for $" + str(
                 amount * price_battery)
         else:
@@ -271,21 +273,21 @@ def get_user_or_None(member):
         return None
 
 
-async def genPower():
-    """Function to periodically generate power"""
+async def powerTick():
+    """Function to periodically generate and consume power"""
     global uptime
     await theBot.wait_until_ready()
     while True:
         for key, user in users.items():
-            user.addPower()  # This adds the specified number of watts
+            user.updatePower()
         uptime = uptime + 1
         await asyncio.sleep(1)
 
 
 def getUserInfo(user):
-    return str(user.name) + ":\n--Battery: " + str(
+    return str(user.name) + ":\n--Power: " + str(
         user.getAttr("watts")) + "/" + str(
-        user.getAttr("battery")) + "W\n--Cash: $" + str(
+        user.getAttr("max_watts")) + "W\n--Cash: $" + str(
         user.getAttr("cash")) + "\n--W/s: " + str(
         user.getGenRate()) + "\n\n"
 
