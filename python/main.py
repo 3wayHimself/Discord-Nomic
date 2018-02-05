@@ -22,7 +22,7 @@ watts_sold = 1  # set to something positive to prevend DIV0 errors
 
 price_battery = 100
 price_solar = 1000
-price_mine = 50
+price_mine = 5000
 
 drain_mine = 2.0
 
