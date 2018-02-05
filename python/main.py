@@ -22,6 +22,9 @@ watts_sold = 1  # set to something positive to prevend DIV0 errors
 
 price_battery = 100
 price_solar = 1000
+price_mine = 50
+
+drain_mine = 2.0
 
 
 # this section is for custom classes
@@ -40,6 +43,12 @@ class User():
             return 4
         elif key == 'cash':
             return 0
+        elif key == 'mine':
+            return 0
+        elif key == 'coal':
+            return 0
+        elif key == 'mine_partial':
+            return 0
         elif key == 'solar_panels':
             return 1
         elif key == "max_watts":
@@ -52,7 +61,24 @@ class User():
 
     def updatePower(self):
         self.addPower()
-        # TODO per tick power consumtion here, such as mines and factories.
+        self.runMine()
+        
+    def runMine(self):
+        for f in range(0, self.getAttr('mine')):
+            if self.consumePower(drain_mine):
+                mined = self.generateOre()
+                self.setAttr(mined['type'], self.getAttr(mined['type']) + mined['amount'])
+            else:
+                remain = self.getAttr("watts")
+                self.consumePower(remain)
+                self.setAttr("mine_partial", self.getAttr("mine_partial") + remain)
+                if self.getAttr("mine_partial") >= drain_mine:
+                    self.setAttr("mine_partial", self.getAttr("mine_partial") - drain_mine)
+                    mined = self.generateOre()
+                    self.setAttr(mined['type'], self.getAttr(mined['type']) + mined['amount'])
+                    
+    def generateOre(self):
+        return {'type':'coal', 'amount':1}
 
     def addPower(self):
         global update_msg
@@ -170,12 +196,23 @@ async def buy(ctx):
             msg = "You have bought " + str(amount) + " solar panels for $" + str(price)
         else:
             msg = "You can't afford that many. It will cost $" + str(price)
+    if args[1].lower() == "mine":
+        price = getPrice(user, "mine", amount)
+        if user.spendCash(price):
+            user.setAttr("mine", user.getAttr("mine") + amount)
+            msg = "You have bought " + str(amount) + " mines for $" + str(price)
+        else:
+            msg = "You can't afford that many. It will cost $" + str(price)
     await theBot.say(msg)
 
 
 @theBot.command(pass_context=True, help='Displays basic game info.')
 async def info(ctx):
-    msg = 'Info: \n' + getUserInfo(get_user_or_None(ctx.message.author))
+    user = get_user_or_None(ctx.message.author)
+    msg = 'Info: \n' + getUserInfo(user)
+    msg = msg + "--Resources:\n"
+    msg = msg + " * Coal Ore: " + str(user.getAttr("coal"))
+    msg = msg + "\n\n"
     await theBot.say(msg)
 
 
@@ -289,7 +326,8 @@ def getUserInfo(user):
         user.getAttr("watts")) + "/" + str(
         user.getAttr("max_watts")) + "W\n--Cash: $" + str(
         user.getAttr("cash")) + "\n--W/s: " + str(
-        user.getGenRate()) + "\n\n"
+        user.getGenRate()) + "\n--Mines: " + str(
+        user.getAttr("mine")) + "\n\n"
 
 
 def getSolarOut():
@@ -308,6 +346,8 @@ def getPrice(user, object, count):
         price = price_solar
     elif object == "batteries":
         price = price_battery
+    elif object == "mine":
+        price = price_mine
     for x in range(0, current):
         price = price * price_multiplier
     final_price = 0
