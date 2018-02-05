@@ -157,19 +157,19 @@ async def buy(ctx):
             return
     # actually do the purchase here.
     if args[1].lower() == "battery":
-        if user.spendCash(amount * price_battery):
+        price = getPrice(user, "batteries", amount)
+        if user.spendCash(price):
             user.setAttr("batteries", user.getAttr("batteries") + amount)
-            msg = "You have bought " + str(amount) + " batteries for $" + str(
-                amount * price_battery)
+            msg = "You have bought " + str(amount) + " batteries for $" + str(price)
         else:
-            msg = "You can't affort that many"
+            msg = "You can't affort that many. It will cost $" + str(price)
     if args[1].lower() == "solar":
-        if user.spendCash(amount * price_solar):
+        price = getPrice(user, "solar_panels", amount)
+        if user.spendCash(price):
             user.setAttr("solar_panels", user.getAttr("solar_panels") + amount)
-            msg = "You have bought " + str(amount) + " solar panels for $" + str(
-                amount * price_solar)
+            msg = "You have bought " + str(amount) + " solar panels for $" + str(price)
         else:
-            msg = "You can't afford that many."
+            msg = "You can't afford that many. It will cost $" + str(price)
     await theBot.say(msg)
 
 
@@ -297,6 +297,24 @@ def getSolarOut():
     if not (2 < hour < 22):
         return 0
     return round(-0.01 * hour ** 2 + .24 * hour - .44, 2)
+
+
+def getPrice(user, object, count):
+    price_multiplier = 1.05
+    current = user.getAttr(object)
+    if current is None:
+        return None
+    if object == "solar_panels":
+        price = price_solar
+    elif object == "batteries":
+        price = price_battery
+    for x in range(0, current):
+        price = price * price_multiplier
+    final_price = 0
+    for x in range(0, count):
+        price = price * price_multiplier
+        final_price = final_price + price
+    return round(final_price, 2)
 
 
 async def save_task():
