@@ -53,6 +53,8 @@ class User():
             return 1
         elif key == "max_watts":
             return self.getAttr("batteries") * 25
+        elif key == 'bots':
+            return 0
         else:
             return None  # if we reach this, the requested key was not found
 
@@ -108,6 +110,13 @@ class User():
         if self.getAttr("cash") >= spent:
             # spend
             self.setAttr("cash", round(self.getAttr("cash") - spent, 2))
+            return True
+        return False
+
+    def spendSolar(self, spent):
+        if self.getAttr("solar_panels") >= spent:
+            # spend
+            self.setAttr("solar_panels", round(self.getAttr("solar_panels") - spent, 2))
             return True
         return False
 
@@ -205,6 +214,41 @@ async def buy(ctx):
             msg = "You can't afford that many. It will cost $" + str(price)
     await theBot.say(msg)
 
+@theBot.command(pass_context=True, help='build stuff. you must have the funds to do so.')
+async def build(ctx):
+    msg = "Invalid item"
+    user = get_user_or_None(ctx.message.author)
+    if user is None:
+        msg = "You are not a player, and therefore can't really do anything"
+        await theBot.say(msg)
+        return
+    args = (ctx.message.content).split()
+    if len(args) == 1:
+        msg = "Please specify something to build." \
+            " Usually this will be in the form of '!build {thing} {amount}'"
+        await theBot.say(msg)
+        return
+    if len(args) == 2:
+        amount = 1
+    else:
+        try:
+            amount = int(args[2])
+            if amount <= 0:
+                msg = "You can't build that amount"
+                await theBot.say(msg)
+                return
+        except ValueError:
+            msg = "An invalid amount was supplied. Please make sure it is a whole number."
+            await theBot.say(msg)
+            return
+    # actually do the purchase here.
+    if args[1].lower() == "bot":
+        if user.spendSolar(2^user.getAttr("bots")):
+            msg = "You have built a bot out of" + str(2^user.getAttr("bots")) + "solar panels"
+            user.setAttr("bots", user.getAttr("bots") + 1)
+        else:
+            msg = "You can't affort that many"
+    await theBot.say(msg)
 
 @theBot.command(pass_context=True, help='Displays basic game info.')
 async def info(ctx):
