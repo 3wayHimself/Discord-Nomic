@@ -191,8 +191,8 @@ async def build(ctx):
         return
     args = (ctx.message.content).split()
     if len(args) == 1:
-        msg = "Please specify something to buy." \
-            " Usually this will be in the form of '!buy {thing} {amount}'"
+        msg = "Please specify something to build." \
+            " Usually this will be in the form of '!build {thing} {amount}'"
         await theBot.say(msg)
         return
     if len(args) == 2:
@@ -201,7 +201,7 @@ async def build(ctx):
         try:
             amount = int(args[2])
             if amount <= 0:
-                msg = "You can't purchase that amount"
+                msg = "You can't build that amount"
                 await theBot.say(msg)
                 return
         except ValueError:
