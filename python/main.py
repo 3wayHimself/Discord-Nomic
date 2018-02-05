@@ -91,10 +91,11 @@ class User():
             if battery_room > generated:
                 self.setAttr("watts", round(self.getAttr("watts") + generated, 2))
             else:
-                if update_msg is not None:
-                    msg = self.mention + " has a full battery"
-                    theBot.loop.create_task(sendMessage(update_msg.channel, msg))
-                self.setAttr("watts", self.getAttr("max_watts"))
+                if self.getAttr("watts") != self.getAttr("max_watts"):
+                    if update_msg is not None:
+                        msg = self.mention + " has a full battery"
+                        theBot.loop.create_task(sendMessage(update_msg.channel, msg))
+                    self.setAttr("watts", self.getAttr("max_watts"))
 
     def consumePower(self, consumed):  # Attempt to consume power. Returns True if successful
         if self.getAttr("watts") >= consumed:
