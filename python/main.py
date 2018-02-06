@@ -9,6 +9,7 @@ import platform
 import pickle
 import math
 import datetime
+from random import randint
 
 
 # This section is for global variables
@@ -49,6 +50,10 @@ class User():
         elif key == 'mine':
             return 0
         elif key == 'coal':
+            return 0
+        elif key == 'stone':
+            return 0
+        elif key == 'copper':
             return 0
         elif key == 'mine_partial':
             return 0
@@ -91,7 +96,11 @@ class User():
                 self.setAttr('land', land_rate + self.getAttr('land'))
 
     def generateOre(self):
-        return {'type': 'coal', 'amount': 1}
+        weights = [(10, {'type': 'coal', 'amount': 1}),
+                   (100, {'type': 'stone', 'amount': 1}),
+                   (4, {'type': 'copper', 'amount': 1})
+                   ]
+        return getWeightedRandom(weights)
 
     def consumeCoal(self, consumed):  # Attempt to consume coal. Returns True if successful
         if self.getAttr("coal") >= consumed:
@@ -275,8 +284,9 @@ async def info(ctx):
     user = get_user_or_None(ctx.message.author)
     msg = 'Info: \n' + getUserInfo(user)
     msg = msg + "--Resources:\n"
-    msg = msg + " * Coal Ore: " + str(user.getAttr("coal"))
-    msg = msg + "\n\n"
+    msg = msg + " * Coal Ore: " + str(user.getAttr("coal")) + "\n"
+    msg = msg + " * Copper Ore: " + str(user.getAttr("copper")) + "\n"
+    msg = msg + " * Raw Stone: " + str(user.getAttr("stone")) + "\n"
     await theBot.say(msg)
 
 
@@ -419,14 +429,15 @@ def getPrice(user, object, count):
         price = price * price_multiplier
         final_price = final_price + price
     return round(final_price, 2)
-    
-    
+
+
 def getWeightedRandom(pairs):
     total = sum(pair[0] for pair in pairs)
     r = randint(1, total)
     for (weight, value) in pairs:
         r -= weight
-        if r <= 0: return value
+        if r <= 0:
+            return value
 
 
 async def save_task():
