@@ -26,6 +26,9 @@ price_mine = 5000
 
 drain_mine = 2.0
 
+bots_drain_coal = 1
+land_rate = 0.00001
+
 
 # this section is for custom classes
 class User():
@@ -55,6 +58,8 @@ class User():
             return self.getAttr("batteries") * 25
         elif key == 'bots':
             return 0
+        elif key == 'land'
+            return 0
         else:
             return None  # if we reach this, the requested key was not found
 
@@ -64,6 +69,7 @@ class User():
     def updatePower(self):
         self.addPower()
         self.runMine()
+        self.runBots()
         
     def runMine(self):
         for f in range(0, self.getAttr('mine')):
@@ -78,9 +84,22 @@ class User():
                     self.setAttr("mine_partial", self.getAttr("mine_partial") - drain_mine)
                     mined = self.generateOre()
                     self.setAttr(mined['type'], self.getAttr(mined['type']) + mined['amount'])
+    
+    def runBots(self):
+    for f in range(0, self.getAttr('bots')):
+        if self.consumeCoal(bots_drain_coal):
+            self.setAttr('land',land_rate)
+
                     
     def generateOre(self):
         return {'type':'coal', 'amount':1}
+    
+    def consumeCoal(self, consumed):  # Attempt to consume coal. Returns True if successful
+        if self.getAttr("coal") >= consumed:
+            self.setAttr("coal", self.getAttr("coal") - consumed)
+            return True
+        else:
+            return False
 
     def addPower(self):
         global update_msg
@@ -102,6 +121,8 @@ class User():
             return True
         else:
             return False
+
+    
 
     def gainCash(self, gained):
         self.setAttr("cash", round(self.getAttr("cash") + gained, 2))
@@ -363,6 +384,7 @@ async def powerTick():
             user.updatePower()
         uptime = uptime + 1
         await asyncio.sleep(1)
+
 
 
 def getUserInfo(user):
