@@ -58,7 +58,7 @@ class User():
             return self.getAttr("batteries") * 25
         elif key == 'bots':
             return 0
-        elif key == 'land'
+        elif key == 'land':
             return 0
         else:
             return None  # if we reach this, the requested key was not found
