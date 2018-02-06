@@ -399,6 +399,14 @@ def getPrice(user, object, count):
         price = price * price_multiplier
         final_price = final_price + price
     return round(final_price, 2)
+    
+    
+def getWeightedRandom(pairs):
+    total = sum(pair[0] for pair in pairs)
+    r = randint(1, total)
+    for (weight, value) in pairs:
+        r -= weight
+        if r <= 0: return value
 
 
 async def save_task():
