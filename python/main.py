@@ -26,6 +26,9 @@ price_mine = 5000
 
 drain_mine = 2.0
 
+bots_drain_coal = 1
+land_rate = 0.00001
+
 
 # this section is for custom classes
 class User():
@@ -55,6 +58,8 @@ class User():
             return self.getAttr("batteries") * 25
         elif key == 'bots':
             return 0
+        elif key == 'land'
+            return 0
         else:
             return None  # if we reach this, the requested key was not found
 
@@ -64,7 +69,8 @@ class User():
     def updatePower(self):
         self.addPower()
         self.runMine()
-        
+        self.runBots()
+
     def runMine(self):
         for f in range(0, self.getAttr('mine')):
             if self.consumePower(drain_mine):
@@ -78,9 +84,21 @@ class User():
                     self.setAttr("mine_partial", self.getAttr("mine_partial") - drain_mine)
                     mined = self.generateOre()
                     self.setAttr(mined['type'], self.getAttr(mined['type']) + mined['amount'])
-                    
+
+    def runBots(self):
+        for f in range(0, self.getAttr('bots')):
+            if self.consumeCoal(bots_drain_coal):
+                self.setAttr('land', land_rate + self.getAttr('land'))
+
     def generateOre(self):
-        return {'type':'coal', 'amount':1}
+        return {'type': 'coal', 'amount': 1}
+
+    def consumeCoal(self, consumed):  # Attempt to consume coal. Returns True if successful
+        if self.getAttr("coal") >= consumed:
+            self.setAttr("coal", self.getAttr("coal") - consumed)
+            return True
+        else:
+            return False
 
     def addPower(self):
         global update_msg
@@ -214,6 +232,7 @@ async def buy(ctx):
             msg = "You can't afford that many. It will cost $" + str(price)
     await theBot.say(msg)
 
+
 @theBot.command(pass_context=True, help='build stuff. you must have the funds to do so.')
 async def build(ctx):
     msg = "Invalid item"
@@ -243,12 +262,13 @@ async def build(ctx):
             return
     # actually do the purchase here.
     if args[1].lower() == "bot":
-        if user.spendSolar(2^user.getAttr("bots")):
-            msg = "You have built a bot out of" + str(2^user.getAttr("bots")) + "solar panels"
+        if user.spendSolar(2 ^ user.getAttr("bots")):
+            msg = "You have built a bot out of" + str(2 ^ user.getAttr("bots")) + "solar panels"
             user.setAttr("bots", user.getAttr("bots") + 1)
         else:
             msg = "You can't affort that many"
     await theBot.say(msg)
+
 
 @theBot.command(pass_context=True, help='Displays basic game info.')
 async def info(ctx):
