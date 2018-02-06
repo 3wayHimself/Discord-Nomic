@@ -86,9 +86,9 @@ class User():
                     self.setAttr(mined['type'], self.getAttr(mined['type']) + mined['amount'])
     
     def runBots(self):
-    for f in range(0, self.getAttr('bots')):
-        if self.consumeCoal(bots_drain_coal):
-            self.setAttr('land',land_rate)
+        for f in range(0, self.getAttr('bots')):
+            if self.consumeCoal(bots_drain_coal):
+                self.setAttr('land',land_rate + self.getAttr('land'))
 
                     
     def generateOre(self):
